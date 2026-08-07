@@ -1,3 +1,5 @@
+<img src="docs/icon.svg" width="64" height="64" align="left" alt="">
+
 # tmux-alwayson
 
 Keep Claude Code, Gemini CLI, OpenCode, Codex CLI, and other AI coding
@@ -9,6 +11,12 @@ go install github.com/nahidspace/tmux-alwayson/cmd/tmux-alwayson@latest
 tmux-alwayson install
 tmux-alwayson status
 ```
+
+Recorded on the actual Raspberry Pi this was built on — a marker is saved
+into a live Claude Code session, the box reboots, and it comes back
+recalling it, with zero manual steps:
+
+![Claude Code session surviving a real reboot on the Pi](docs/reboot-demo.gif)
 
 ## What `install` does
 
