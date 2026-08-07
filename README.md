@@ -6,15 +6,19 @@ Keep Claude Code, Gemini CLI, OpenCode, Codex CLI, and other AI coding
 agents running in tmux alive across reboots, with one command instead of a
 dozen manual steps.
 
+## Install
+
 ```bash
 go install github.com/nahidspace/tmux-alwayson/cmd/tmux-alwayson@latest
 tmux-alwayson install
 tmux-alwayson status
 ```
 
-![Claude Code session surviving a real reboot](docs/reboot-demo.gif)
-
 `tmux-alwayson uninstall [--purge]` undoes it.
+
+## Demo
+
+![Claude Code session surviving a real reboot](docs/reboot-demo.gif)
 
 ## Supported agents
 
