@@ -87,6 +87,11 @@ func registry() *agent.Registry {
 	reg.Register(agent.OpenCode{})
 	reg.Register(agent.Codex{})
 	reg.Register(agent.Hermes{})
+	reg.Register(agent.Pi{})
+	reg.Register(agent.OMP{})
+	reg.Register(agent.Grok{})
+	reg.Register(agent.Gemini{})
+	reg.Register(agent.Qwen{})
 	return reg
 }
 
