@@ -28,17 +28,17 @@ type Agent interface {
 }
 ```
 
-| Agent | Detection wired up | Live-verified |
-|---|---|---|
-| Claude Code | yes | yes, including a real unplanned reboot |
-| OpenCode | yes | no |
-| Codex CLI | yes | no |
-| Pi | yes | no |
-| Oh My Pi | yes | no |
-| Grok | yes | no |
-| Gemini CLI | not yet | no |
-| Qwen Code | not yet | no |
-| Hermes Agent | not yet | no |
+| Agent | Detection wired up |
+|---|---|
+| Claude Code | yes |
+| OpenCode | yes |
+| Codex CLI | yes |
+| Pi | yes |
+| Oh My Pi | yes |
+| Grok | yes |
+| Gemini CLI | not yet |
+| Qwen Code | not yet |
+| Hermes Agent | not yet |
 
 "Wired up" means the bash hooks already detect that agent in a pane and
 hand this tool a session ID to validate. The three "not yet" agents have a
