@@ -36,6 +36,8 @@ func main() {
 		err = runStatus()
 	case "guarded-save":
 		err = runGuardedSave()
+	case "uninstall":
+		err = runUninstall(hasFlag("--purge"))
 	case "help", "-h", "--help":
 		usage()
 		return
@@ -60,7 +62,23 @@ Usage:
   tmux-alwayson status        check what's installed and currently active
   tmux-alwayson guarded-save  run one save cycle (used by the systemd timer
                                and by tmux.service's own shutdown save --
-                               not normally run by hand)`)
+                               not normally run by hand)
+  tmux-alwayson uninstall     disable and remove the systemd units and the
+                               tmux.conf block this tool added
+  tmux-alwayson uninstall --purge
+                               also remove the TPM/plugin/hooks-repo clones
+                               and disable linger (leaves any agent-side
+                               hook registration, e.g. ~/.claude/settings.json,
+                               untouched -- see README)`)
+}
+
+func hasFlag(name string) bool {
+	for _, a := range os.Args[2:] {
+		if a == name {
+			return true
+		}
+	}
+	return false
 }
 
 func registry() *agent.Registry {
@@ -168,5 +186,40 @@ func runGuardedSave() error {
 		return err
 	}
 	fmt.Println(summary)
+	return nil
+}
+
+func runUninstall(purge bool) error {
+	p, err := setup.DefaultPaths()
+	if err != nil {
+		return err
+	}
+
+	step := func(label string, fn func() error) error {
+		fmt.Print("-> " + label + " ... ")
+		if err := fn(); err != nil {
+			fmt.Println("FAILED")
+			return fmt.Errorf("%s: %w", label, err)
+		}
+		fmt.Println("ok")
+		return nil
+	}
+
+	if err := step("disabling and removing systemd units", setup.DisableSystemdUnits); err != nil {
+		return err
+	}
+	if err := step("removing tmux.conf block", func() error { return setup.StripTmuxConf(p) }); err != nil {
+		return err
+	}
+
+	if !purge {
+		fmt.Println("\nDone. TPM/plugin/hooks-repo clones and linger were left in place -- rerun with --purge to remove those too.")
+		return nil
+	}
+
+	if err := step("removing TPM, plugin, and hooks-repo clones", func() error { return setup.PurgeClones(p) }); err != nil {
+		return err
+	}
+	fmt.Println("\nDone. Agent-side hook registration (e.g. ~/.claude/settings.json) was left as-is -- see README.")
 	return nil
 }
