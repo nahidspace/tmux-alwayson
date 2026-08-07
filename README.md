@@ -1,11 +1,12 @@
-# tmux-alwayson — keep Claude Code, OpenCode, and Codex CLI sessions alive through a reboot
+# tmux-alwayson — keep Claude Code, Gemini CLI, OpenCode, Codex CLI, and more alive through a reboot
 
-If you've ever rebooted a box running **Claude Code**, **OpenCode**, or
-**Codex CLI** inside `tmux` and come back to a blank prompt instead of your
-conversation, this is for it. `tmux-alwayson` is a one-command installer
-that makes an AI coding agent's tmux session **survive both a plain tmux
-restart and a full system reboot** — including on a headless box like a
-Raspberry Pi with nobody logged in.
+If you've ever rebooted a box running **Claude Code**, **Gemini CLI**,
+**Qwen Code**, **OpenCode**, or **Codex CLI** inside `tmux` and come back to
+a blank prompt instead of your conversation, this is for it.
+`tmux-alwayson` is a one-command installer that makes an AI coding agent's
+tmux session **survive both a plain tmux restart and a full system
+reboot** — including on a headless box like a Raspberry Pi with nobody
+logged in.
 
 ```bash
 go install github.com/nahidspace/tmux-alwayson/cmd/tmux-alwayson@latest
@@ -84,7 +85,7 @@ uninstall` (optionally with `--purge`) undoes it.
   guaranteed to run a multi-step save script to completion. Fixed with a
   systemd timer that calls the save directly and synchronously instead.
 
-## Adding OpenCode, Codex CLI, or any other agent
+## Supported agents
 
 Whether a captured session ID is still real, and what to fall back to if
 it isn't, is defined once behind an interface — not hard-coded per agent:
@@ -99,11 +100,35 @@ type Agent interface {
 }
 ```
 
-`Claude`, `OpenCode`, and `Codex` (`internal/agent/`) are implemented and
-tested today. Adding another agent — or wiring up `Hermes`, which is
-implemented but not yet connected to detection — is implementing this
-interface once and registering it in `cmd/tmux-alwayson/main.go`. The
-installer and the save guard don't change.
+Nine agents are implemented and tested in `internal/agent/`:
+
+| Agent | Session storage | Live-verified | Detection wired up |
+|---|---|---|---|
+| Claude Code | per-session `.jsonl` transcript | yes, repeatedly, including a real unplanned reboot | yes |
+| OpenCode | SQLite (`opencode.db`) | no | yes |
+| Codex CLI | SQLite `threads` table, or rollout `.jsonl` (older versions) | no | yes |
+| Pi | per-session `.jsonl` under a cwd-scoped dir | no | yes |
+| Oh My Pi | per-session `.jsonl`, default profile only | no | yes |
+| Grok (xAI) | JSON registry (`active_sessions.json`) | no | yes |
+| Gemini CLI | per-session `.jsonl`, scanned by content | no | not yet |
+| Qwen Code | per-session `.jsonl`, scanned by content | no | not yet |
+| Hermes Agent | SQLite (`state.db`) | no | not yet |
+
+"Detection wired up" means the bash hooks in `tmux-assistant-resurrect`
+already recognize that agent running in a pane and populate a sidecar
+entry for it — at that point this tool's `Agent` implementation validates
+and repairs what got captured. For the three marked "not yet," the
+`ValidSession`/`NewestSession` logic is ready, but nothing produces a
+sidecar entry for them yet; that needs either an addition to those bash
+hooks, or `tmux-alwayson` doing its own process scan via the already-built
+`Matches()` method. Only Claude Code has been exercised against a real,
+running install through this tool end to end — the rest are implemented
+from each project's documented (or, for Codex/Gemini/Qwen, source-code-read)
+session storage format.
+
+Adding another agent, or finishing the wiring for one of the three above,
+is implementing this interface once and registering it in
+`cmd/tmux-alwayson/main.go`. The installer and the save guard don't change.
 
 ## FAQ
 
@@ -117,10 +142,10 @@ whatever happened since the last periodic save (five minutes by default) —
 but the guard means that periodic save is never corrupted or silently
 empty, only ever as stale as the interval.
 
-**Does it support OpenCode or Codex CLI?** Their `Agent` implementations
-exist and are tested; full detection still depends on the bash hooks in
-`tmux-assistant-resurrect` recognizing them in a pane, which it already
-does for both.
+**Does it support OpenCode, Codex CLI, Gemini CLI, or Qwen Code?**
+OpenCode, Codex CLI, Pi, Oh My Pi, and Grok are detected end to end today.
+Gemini CLI and Qwen Code have working `Agent` implementations but aren't
+wired into detection yet — see the agent table above.
 
 **Why not just use `tmux-continuum`'s autosave?** It's a backgrounded job
 tied to tmux's own status-bar rendering, not a reliably-run save script —
