@@ -84,8 +84,9 @@ func hasFlag(name string) bool {
 func registry() *agent.Registry {
 	reg := agent.NewRegistry()
 	reg.Register(agent.Claude{})
-	// Register additional agents here as they're implemented, e.g.:
-	//   reg.Register(agent.OpenCode{})
+	reg.Register(agent.OpenCode{})
+	reg.Register(agent.Codex{})
+	reg.Register(agent.Hermes{})
 	return reg
 }
 

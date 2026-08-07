@@ -130,7 +130,10 @@ func countPaneLines(path string) (int, error) {
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := scanner.Text()
-		if len(line) >= 4 && line[:4] == "pane" {
+		// tmux-resurrect's save format is tab-delimited fields, first field
+		// the line type -- "pane" must be the whole first field, not just a
+		// prefix, or a line like "panecake\t..." would miscount.
+		if line == "pane" || (len(line) > 4 && line[:4] == "pane" && line[4] == '\t') {
 			count++
 		}
 	}
