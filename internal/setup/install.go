@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // RequireBinaries checks that every external tool tmux-alwayson depends on
@@ -133,7 +134,31 @@ func tmpTmuxSession(fn func() error) error {
 	if out, err := exec.Command("tmux", "send-keys", "-t", name, "tmux source-file ~/.tmux.conf", "Enter").CombinedOutput(); err != nil {
 		return fmt.Errorf("sourcing tmux.conf: %w (%s)", err, string(out))
 	}
+	if err := waitForTPMEnv(); err != nil {
+		return err
+	}
 	return fn()
+}
+
+// waitForTPMEnv blocks until TPM's `run '.../tpm'` line (triggered by the
+// source-file above) has actually executed and set TMUX_PLUGIN_MANAGER_PATH
+// in the server's global environment. source-file's `run` directive launches
+// that script in the background, so without this wait install_plugins can
+// start before the variable exists, failing with "unknown variable:
+// TMUX_PLUGIN_MANAGER_PATH".
+func waitForTPMEnv() error {
+	const timeout = 5 * time.Second
+	const interval = 100 * time.Millisecond
+	deadline := time.Now().Add(timeout)
+	for {
+		if exec.Command("tmux", "show-environment", "-g", "TMUX_PLUGIN_MANAGER_PATH").Run() == nil {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timed out after %s waiting for tpm to set TMUX_PLUGIN_MANAGER_PATH (is the tpm run line present in tmux.conf?)", timeout)
+		}
+		time.Sleep(interval)
+	}
 }
 
 func InstallTPMPlugins(p Paths) error {
